@@ -810,6 +810,8 @@ visitResumeThrowingContinuationThrowing(BuiltinInst *bi, StringRef attr) {
 
 BUILTIN_OPERAND_OWNERSHIP(InteriorPointer, CancelAsyncTask)
 BUILTIN_OPERAND_OWNERSHIP(InteriorPointer, InitializeDefaultActor)
+BUILTIN_OPERAND_OWNERSHIP(InteriorPointer, InitializeDefaultActorLocked)
+BUILTIN_OPERAND_OWNERSHIP(InteriorPointer, InitializeDefaultActorUnlock)
 BUILTIN_OPERAND_OWNERSHIP(InteriorPointer, DestroyDefaultActor)
 
 // FIXME: Why do these reqiuire a borrowed value at all?

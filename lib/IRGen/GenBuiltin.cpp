@@ -306,10 +306,27 @@ void irgen::emitBuiltinCall(IRGenFunction &IGF, const BuiltinInfo &Builtin,
   }
 
   if (Builtin.ID == BuiltinValueKind::InitializeDefaultActor ||
+      Builtin.ID == BuiltinValueKind::InitializeDefaultActorLocked ||
+      Builtin.ID == BuiltinValueKind::InitializeDefaultActorUnlock ||
       Builtin.ID == BuiltinValueKind::DestroyDefaultActor) {
-    auto fn = Builtin.ID == BuiltinValueKind::InitializeDefaultActor
-                ? IGF.IGM.getDefaultActorInitializeFn()
-                : IGF.IGM.getDefaultActorDestroyFn();
+    llvm::Constant *fn = nullptr;
+    switch(Builtin.ID) {
+    case BuiltinValueKind::InitializeDefaultActor:
+      fn = IGF.IGM.getDefaultActorInitializeFn();
+      break;
+    case BuiltinValueKind::InitializeDefaultActorLocked:
+      fn = IGF.IGM.getDefaultActorInitializeLockedFn();
+      break;
+    case BuiltinValueKind::InitializeDefaultActorUnlock:
+      fn = IGF.IGM.getDefaultActorInitializeUnlockFn();
+      break;
+    case BuiltinValueKind::DestroyDefaultActor:
+      fn = IGF.IGM.getDefaultActorDestroyFn();
+      break;
+    default:
+      swift_unreachable("unexpected actor init/dinit kind");
+    }
+    assert(fn);
     auto actor = args.claimNext();
     actor = IGF.Builder.CreateBitCast(actor, IGF.IGM.RefCountedPtrTy);
     auto call = IGF.Builder.CreateCall(fn, {actor});

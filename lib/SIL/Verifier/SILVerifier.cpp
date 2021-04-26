@@ -1831,6 +1831,8 @@ public:
     }
 
     if (builtinKind == BuiltinValueKind::InitializeDefaultActor ||
+        builtinKind == BuiltinValueKind::InitializeDefaultActorLocked ||
+        builtinKind == BuiltinValueKind::InitializeDefaultActorUnlock ||
         builtinKind == BuiltinValueKind::DestroyDefaultActor) {
       auto arguments = BI->getArguments();
       require(arguments.size() == 1,

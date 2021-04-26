@@ -657,12 +657,33 @@ void SILGenFunction::emitClassConstructorAllocator(ConstructorDecl *ctor) {
   B.createReturn(ImplicitReturnLocation(Loc), initedSelfValue);
 }
 
-static void emitDefaultActorInitialization(SILGenFunction &SGF,
+/// returns true iff locked-actor initialization was performed
+static bool emitDefaultActorInitialization(SILGenFunction &SGF,
                                            SILLocation loc,
                                            ManagedValue self) {
+  auto name = SGF.getFunction().isAsync()
+              ? BuiltinValueKind::InitializeDefaultActor
+              : BuiltinValueKind::InitializeDefaultActorLocked;
+
   auto &ctx = SGF.getASTContext();
-  auto builtinName = ctx.getIdentifier(
-    getBuiltinName(BuiltinValueKind::InitializeDefaultActor));
+  auto builtinName = ctx.getIdentifier(getBuiltinName(name));
+  auto resultTy = SGF.SGM.Types.getEmptyTupleType();
+
+  FullExpr scope(SGF.Cleanups, CleanupLocation(loc));
+  SGF.B.createBuiltin(loc, builtinName, resultTy, /*subs*/{},
+                      { self.borrow(SGF, loc).getValue() });
+
+  return name == BuiltinValueKind::InitializeDefaultActorLocked;
+}
+
+/// emits an instruction to signal to the runtime system that
+/// the actor's locked-initialization has ended.
+static void emitEndOfLockedActorInitialization(SILGenFunction &SGF,
+                                               SILLocation loc,
+                                               ManagedValue self) {
+  auto &ctx = SGF.getASTContext();
+  auto builtinName = ctx.getIdentifier(getBuiltinName(
+                            BuiltinValueKind::InitializeDefaultActorUnlock));
   auto resultTy = SGF.SGM.Types.getEmptyTupleType();
 
   FullExpr scope(SGF.Cleanups, CleanupLocation(loc));
@@ -759,10 +780,12 @@ void SILGenFunction::emitClassConstructorInitializer(ConstructorDecl *ctor) {
   }
 
   // Initialize the default-actor instance.
+  bool lockedActorInit = false;
   if (selfClassDecl->isRootDefaultActor() && !isDelegating) {
     SILLocation PrologueLoc(selfDecl);
     PrologueLoc.markAsPrologue();
-    emitDefaultActorInitialization(*this, PrologueLoc, selfArg);
+    lockedActorInit =
+        emitDefaultActorInitialization(*this, PrologueLoc, selfArg);
   }
 
   if (!ctor->hasStubImplementation()) {
@@ -876,6 +899,12 @@ void SILGenFunction::emitClassConstructorInitializer(ConstructorDecl *ctor) {
 
     SILGenSavedInsertionPoint savedIP(*this, ReturnDest.getBlock());
     auto cleanupLoc = CleanupLocation(ctor);
+
+    // If we're in a locked-actor initialization, unlock the actor first, since
+    // anything after this point in the epilogue will not touch the actor's
+    // protected state.
+    if (lockedActorInit)
+      emitEndOfLockedActorInitialization(*this, cleanupLoc, selfArg);
 
     // If we're using a box for self, reload the value at the end of the init
     // method.

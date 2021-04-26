@@ -1654,6 +1654,22 @@ FUNCTION(DefaultActorInitialize,
          ARGS(RefCountedPtrTy),
          ATTRS(NoUnwind))
 
+// void swift_defaultActor_initialize_locked(DefaultActor *actor);
+FUNCTION(DefaultActorInitializeLocked,
+         swift_defaultActor_initialize_locked, SwiftCC,
+         ConcurrencyAvailability,
+         RETURNS(VoidTy),
+         ARGS(RefCountedPtrTy),
+         ATTRS(NoUnwind))
+
+// void swift_defaultActor_initialize_unlock(DefaultActor *actor);
+FUNCTION(DefaultActorInitializeUnlock,
+         swift_defaultActor_initialize_unlock, SwiftCC,
+         ConcurrencyAvailability,
+         RETURNS(VoidTy),
+         ARGS(RefCountedPtrTy),
+         ATTRS(NoUnwind))
+
 // void swift_defaultActor_destroy(DefaultActor *actor);
 FUNCTION(DefaultActorDestroy,
          swift_defaultActor_destroy, SwiftCC,

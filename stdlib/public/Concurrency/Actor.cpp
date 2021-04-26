@@ -574,7 +574,13 @@ class DefaultActorImpl : public HeapObject {
     /// Fortunately almost all of the overhead here is only incurred
     /// when we actually do end up in the zombie state.
     Zombie_Latching,
-    Zombie_ReadyForDeallocation
+    Zombie_ReadyForDeallocation,
+
+    /// Indicates that this actor is busy within its initializer
+    /// function and cannot be interrupted until that initializer finishes.
+    /// There is no corresponding Job it is running, and the initializer
+    /// will explicitly change the status once it finishes.
+    LockedForInit
   };
 
   struct Flags : public FlagSet<size_t> {
@@ -598,6 +604,7 @@ class DefaultActorImpl : public HeapObject {
     bool isAnyRunningStatus() const {
       auto status = getStatus();
       return status == Status::Running ||
+             status == Status::LockedForInit ||
              status == Status::Zombie_Latching ||
              status == Status::Zombie_ReadyForDeallocation;
     }
@@ -642,8 +649,13 @@ class DefaultActorImpl : public HeapObject {
 public:
 
   /// Properly construct an actor, except for the heap header.
-  void initialize() {
-    new (&CurrentState) std::atomic<State>(State{JobRef(), Flags()});
+  void initialize(bool lockedDuringInit) {
+    Flags flags;
+
+    if (lockedDuringInit)
+      flags.setStatus(Status::LockedForInit);
+
+    new (&CurrentState) std::atomic<State>(State{JobRef(), flags});
   }
 
   /// Properly destruct an actor, except for the heap header.
@@ -1659,7 +1671,19 @@ bool DefaultActorImpl::tryAssumeThread(RunningJobInfo runner) {
 }
 
 void swift::swift_defaultActor_initialize(DefaultActor *_actor) {
-  asImpl(_actor)->initialize();
+  asImpl(_actor)->initialize(/*lockedDuringInit=*/false);
+}
+
+void swift::swift_defaultActor_initialize_locked(DefaultActor *_actor) {
+  swift_defaultActor_initialize(_actor);
+// FIXME: should be the below instead.
+//  asImpl(_actor)->initialize(/*lockedDuringInit=*/true);
+}
+
+void swift::swift_defaultActor_initialize_unlock(DefaultActor *_actor) {
+  return;
+  // FIXME: todo
+  swift_unreachable("TODO: initialize_unlock impl");
 }
 
 void swift::swift_defaultActor_destroy(DefaultActor *_actor) {

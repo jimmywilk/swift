@@ -555,6 +555,17 @@ SWIFT_CC(swift) void (*swift_task_enqueueMainExecutor_hook)(
 SWIFT_EXPORT_FROM(swift_Concurrency) SWIFT_CC(swift)
 void swift_defaultActor_initialize(DefaultActor *actor);
 
+/// Initialize the runtime storage for a default actor that
+/// wants to use locked actor initialization, which prevents
+/// jobs from running until signalled by the corresponding unlock
+/// function.
+SWIFT_EXPORT_FROM(swift_Concurrency) SWIFT_CC(swift)
+void swift_defaultActor_initialize_locked(DefaultActor *actor);
+
+/// Signals the end of locked actor initialization.
+SWIFT_EXPORT_FROM(swift_Concurrency) SWIFT_CC(swift)
+void swift_defaultActor_initialize_unlock(DefaultActor *actor);
+
 /// Destroy the runtime storage for a default actor.
 SWIFT_EXPORT_FROM(swift_Concurrency) SWIFT_CC(swift)
 void swift_defaultActor_destroy(DefaultActor *actor);

@@ -2767,6 +2767,8 @@ ValueDecl *swift::getBuiltinValueDecl(ASTContext &Context, Identifier Id) {
     return getTriggerFallbackDiagnosticOperation(Context, Id);
 
   case BuiltinValueKind::InitializeDefaultActor:
+  case BuiltinValueKind::InitializeDefaultActorLocked:
+  case BuiltinValueKind::InitializeDefaultActorUnlock:
   case BuiltinValueKind::DestroyDefaultActor:
     return getDefaultActorInitDestroy(Context, Id);
 

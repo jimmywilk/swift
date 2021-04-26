@@ -721,6 +721,14 @@ BUILTIN_MISC_OPERATION(IntInstrprofIncrement, "int_instrprof_increment", "", Spe
 /// Initialize the default-actor instance in a default actor object.
 BUILTIN_MISC_OPERATION(InitializeDefaultActor, "initializeDefaultActor", "", Special)
 
+/// Initialize the default-actor instance in a default actor object for
+/// locked-actor initialization. This means that we are starting the actor in
+/// a state that is locked until the end of initialization is signalled.
+BUILTIN_MISC_OPERATION(InitializeDefaultActorLocked, "initializeDefaultActorLocked", "", Special)
+
+/// Signals the end of locked-actor initialization.
+BUILTIN_MISC_OPERATION(InitializeDefaultActorUnlock, "initializeDefaultActorUnlock", "", Special)
+
 /// Destroy the default-actor instance in a default actor object.
 BUILTIN_MISC_OPERATION(DestroyDefaultActor, "destroyDefaultActor", "", Special)
 
